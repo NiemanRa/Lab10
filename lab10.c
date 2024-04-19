@@ -5,9 +5,24 @@
 // Trie structure
 struct Trie
 {	
-    int isaWord; // 0 if not a word, 1 if a word!
-    struct trie* next[26];
+    int count;
+    struct Trie* next[26];
 };
+
+// Initializes a trie structure
+struct Trie *createTrie()
+{
+    struct Trie* myTree = malloc(sizeof(struct Trie));
+    myTree->count = 0;
+
+    // Set each pointer to NULL
+    int i;
+    for (i = 0; i < 26; i++)
+        myTree->next[i] = NULL;
+
+    // Return Pointer to New Root
+    return myTree;
+}
 
 // Inserts the word to the trie structure
 void insert(struct Trie *pTrie, char *word)
@@ -16,65 +31,81 @@ void insert(struct Trie *pTrie, char *word)
 
     while (i != strlen(word))
     {
-        // See if the next place to go exists, if not, create it.
+        // If next doesn't exist, Create
         int nextIndex = word[i] - 'a';
         if (pTrie->next[nextIndex] == NULL)
-            pTrie->next[nextIndex] = init();
+        {
+            pTrie->next[nextIndex] = createTrie();
+            pTrie->next[nextIndex]->count += 1;
+        }
 
         pTrie = pTrie->next[nextIndex];
 
         i++;
     }
 
-    pTrie->isaWord = 1;
+    //pTrie->count = 1;
 }
 
-// Computes the number of occurances of the word
+// Computes the number of occurences of the word
 int numberOfOccurances(struct Trie *pTrie, char *word)
 {
-    
+    int o = 0; // "o" for "occurence"
+    int nextIndex;
+
+    struct Trie* temp;
+    temp = pTrie;
+
+    do {
+        nextIndex = word[o] - 'a';
+        if (temp->next[nextIndex] == NULL)
+            return 0;
+
+        temp = temp->next[nextIndex];
+        o++;
+
+    } while (o != strlen(word));
+
+    return temp->count;
 }
 
 // Deallocate the trie structure
 struct Trie *deallocateTrie(struct Trie *pTrie)
 {
-}
+    int deAl; // "deAl" for "deallocation"
+    for (deAl = 0; deAl < 26; deAl++)
+        if (pTrie->next[deAl] != NULL)
+            deallocateTrie(pTrie->next[deAl]);
 
-// Initializes a trie structure
-struct Trie *createTrie()
-{
-    struct Trie* myTree = malloc(sizeof(struct Trie));
-    myTree->isaWord = 0;
+    pTrie = NULL;
+    free(pTrie);
 
-    // Set each pointer to NULLL.
-    int i;
-    for (i = 0; i < 26; i++)
-        myTree->next[i] = NULL;
-
-    // Return a pointer to the new root.
-    return myTree;
+    return pTrie;
 }
 
 // This function will return number of words in the dictionary, and read all the words in the dictionary to the structure words
 int readDictionary(char *filename, char **pInWords)
 {
-    struct trie* myDictionary = init();
+    FILE* file = fopen(filename, "r");
 
-    char c, r;
-    fscanf(filename, "%d", &c);
+    if (file == NULL)
+        return -1;
 
-    // Read in each word and insert it.
-    for (r = 0; r < strlen(pInWords); r++) {
-        char word[100];
-        fscanf(filename, "%s", word);
-        insert(myDictionary, word);
-        // debug code to trace which word is being processed for large list of words
-        // if (i%10000 == 0) printf("%d word is %s\n", i, word);
+    int commands = 0;
+
+    // Read and Insert Each Work
+    fscanf(file, "%d\n", &commands);
+    char word[100];
+
+    for (int r = 0; r < commands; r++) // "r" for "read"
+    {
+        fscanf(file, "%s\n", word);
+        pInWords[r] = (char*) malloc(sizeof(char*) * strlen(word));
+        strcpy(pInWords[r], word);
+        printf("Word: %s\n", word);
     }
 
-    free(filename);
-
-    // return SIZE OF TREE;
+    return commands;
 }
 
 int main(void)
@@ -100,6 +131,7 @@ int main(void)
 	{
 		printf("\t%s : %d\n", pWords[i], numberOfOccurances(pTrie, pWords[i]));
 	}
+    
 
 	pTrie = deallocateTrie(pTrie);
 	if (pTrie != NULL)
